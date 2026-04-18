@@ -12,6 +12,163 @@ local player = Players.LocalPlayer
 local enabled = true
 local orbiting = false
 
+-- ================================================
+-- KEY SYSTEM (GITHUB)
+-- ================================================
+local KEY_URL = "https://raw.githubusercontent.com/nicodeptrai0-ctrl/B-Minh-v-i/main/0396196227keyx.txt"
+local GET_KEY_LINK = "https://discord.gg/yourlink"
+
+local isVerified = false
+
+local function CreateKeySystem()
+	local keyGui = Instance.new("ScreenGui")
+	keyGui.Name = "BoMinhKeySystem"
+	keyGui.ResetOnSpawn = false
+	keyGui.Parent = player:WaitForChild("PlayerGui")
+	
+	local bg = Instance.new("Frame")
+	bg.Size = UDim2.new(0, 350, 0, 200)
+	bg.Position = UDim2.new(0.5, -175, 0.5, -100)
+	bg.BackgroundColor3 = Color3.fromRGB(22, 24, 32)
+	bg.BorderSizePixel = 0
+	bg.Parent = keyGui
+	Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 8)
+	local stroke = Instance.new("UIStroke", bg)
+	stroke.Color = Color3.fromRGB(60, 140, 255)
+	stroke.Thickness = 1.5
+	
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, 0, 0, 40)
+	title.BackgroundTransparency = 1
+	title.Text = "Bố Minh VĨ ĐẠI - Key System"
+	title.TextColor3 = Color3.fromRGB(60, 140, 255)
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 16
+	title.Parent = bg
+	
+	local box = Instance.new("TextBox")
+	box.Size = UDim2.new(0.8, 0, 0, 35)
+	box.Position = UDim2.new(0.1, 0, 0.35, 0)
+	box.BackgroundColor3 = Color3.fromRGB(35, 38, 50)
+	box.TextColor3 = Color3.fromRGB(255, 255, 255)
+	box.PlaceholderText = "Enter your key here..."
+	box.Font = Enum.Font.Gotham
+	box.TextSize = 13
+	box.Text = ""
+	box.Parent = bg
+	Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
+	
+	local verifyBtn = Instance.new("TextButton")
+	verifyBtn.Size = UDim2.new(0.35, 0, 0, 35)
+	verifyBtn.Position = UDim2.new(0.1, 0, 0.65, 0)
+	verifyBtn.BackgroundColor3 = Color3.fromRGB(60, 140, 255)
+	verifyBtn.Text = "Verify Key"
+	verifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	verifyBtn.Font = Enum.Font.GothamBold
+	verifyBtn.TextSize = 13
+	verifyBtn.Parent = bg
+	Instance.new("UICorner", verifyBtn).CornerRadius = UDim.new(0, 6)
+	
+	local getBtn = Instance.new("TextButton")
+	getBtn.Size = UDim2.new(0.35, 0, 0, 35)
+	getBtn.Position = UDim2.new(0.55, 0, 0.65, 0)
+	getBtn.BackgroundColor3 = Color3.fromRGB(50, 55, 75)
+	getBtn.Text = "Get Key"
+	getBtn.TextColor3 = Color3.fromRGB(220, 225, 240)
+	getBtn.Font = Enum.Font.GothamBold
+	getBtn.TextSize = 13
+	getBtn.Parent = bg
+	Instance.new("UICorner", getBtn).CornerRadius = UDim.new(0, 6)
+	
+	local status = Instance.new("TextLabel")
+	status.Size = UDim2.new(1, 0, 0, 20)
+	status.Position = UDim2.new(0, 0, 0.85, 0)
+	status.BackgroundTransparency = 1
+	status.Text = ""
+	status.TextColor3 = Color3.fromRGB(255, 80, 80)
+	status.Font = Enum.Font.Gotham
+	status.TextSize = 11
+	status.Parent = bg
+
+	getBtn.MouseButton1Click:Connect(function()
+		pcall(function() setclipboard(GET_KEY_LINK) end)
+		status.TextColor3 = Color3.fromRGB(100, 255, 100)
+		status.Text = "Link copied to clipboard!"
+	end)
+
+	verifyBtn.MouseButton1Click:Connect(function()
+		local input = box.Text
+		if input == "" then
+			status.TextColor3 = Color3.fromRGB(255, 80, 80)
+			status.Text = "Please enter a key!"
+			return
+		end
+		status.TextColor3 = Color3.fromRGB(200, 200, 200)
+		status.Text = "Checking key..."
+		
+		local s, r = pcall(function() return game:HttpGet(KEY_URL) end)
+		if s and r then
+			local valid = false
+			local expired = false
+			for k in string.gmatch(r, "[^\r\n]+") do
+				local parts = string.split(k, "|")
+				local keyPart = parts[1]
+				local datePart = parts[2]
+				keyPart = keyPart and keyPart:match("^%s*(.-)%s*$")
+				local cleanInput = input:match("^%s*(.-)%s*$")
+				
+				if keyPart == cleanInput then 
+					if datePart then
+						datePart = datePart:match("^%s*(.-)%s*$")
+						local year, month, day = datePart:match("^(%d+)%-(%d+)%-(%d+)$")
+						if year and month and day then
+							local expiryTime = os.time({
+								year = tonumber(year),
+								month = tonumber(month),
+								day = tonumber(day),
+								hour = 23, min = 59, sec = 59
+							})
+							if os.time() > expiryTime then
+								expired = true
+							else
+								valid = true
+							end
+						else
+							valid = true
+						end
+					else
+						valid = true
+					end
+					break 
+				end
+			end
+			
+			if valid then
+				status.TextColor3 = Color3.fromRGB(100, 255, 100)
+				status.Text = "Key Valid! Loading Script..."
+				task.wait(1)
+				keyGui:Destroy()
+				isVerified = true
+			elseif expired then
+				status.TextColor3 = Color3.fromRGB(255, 80, 80)
+				status.Text = "Key Expired!"
+			else
+				status.TextColor3 = Color3.fromRGB(255, 80, 80)
+				status.Text = "Invalid Key!"
+			end
+		else
+			status.TextColor3 = Color3.fromRGB(255, 80, 80)
+			status.Text = "Error connecting to GitHub!"
+		end
+	end)
+end
+
+CreateKeySystem()
+repeat task.wait(0.5) until isVerified
+
+-- ================================================
+-- CODE CHIẾN ĐẤU (SAU KHI XÁC NHẬN KEY)
+-- ================================================
 
 task.spawn(function()
 	loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
