@@ -16,7 +16,7 @@ local orbiting = false
 -- KEY SYSTEM (GITHUB)
 -- ================================================
 -- ĐIỀN LINK GITHUB RAW CỦA BẠN CHỨA DANH SÁCH KEY VÀO ĐÂY (Mỗi key 1 dòng)
-local KEY_URL = "https://github.com/nicodeptrai0-ctrl/B-Minh-v-i/blob/main/keys.txt"
+local KEY_URL = "https://github.com/nicodeptrai0-ctrl/B-Minh-v-i/blob/main/0396196227keyx.txt"
 -- ĐIỀN LINK LẤY KEY (Vd: Discord, Linkvertise...) VÀO ĐÂY
 local GET_KEY_LINK = "https://discord.gg/yourlink"
 
