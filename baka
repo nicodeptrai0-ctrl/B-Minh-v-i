@@ -16,7 +16,7 @@ local orbiting = false
 -- KEY SYSTEM (GITHUB)
 -- ================================================
 -- ĐIỀN LINK GITHUB RAW CỦA BẠN CHỨA DANH SÁCH KEY VÀO ĐÂY (Mỗi key 1 dòng)
-local KEY_URL = "https://raw.githubusercontent.com/nicodeptrai0-ctrl/B-Minh-v-i/main/keys.txt"
+local KEY_URL = "https://raw.githubusercontent.com/nicodeptrai0-ctrl/B-Minh-v-i/main/0396196227keyx.txt"
 -- ĐIỀN LINK LẤY KEY (Vd: Discord, Linkvertise...) VÀO ĐÂY
 local GET_KEY_LINK = "https://discord.gg/yourlink"
 
@@ -176,7 +176,7 @@ CreateKeySystem()
 repeat task.wait(0.5) until isVerified
 
 -- GỌI CODE CHIẾN ĐẤU VỀ SAU KHI XÁC NHẬN KEY
-local remoteScript = game:HttpGet('https://raw.githubusercontent.com/nicodeptrai0-ctrl/B-Minh-v-i/main/script.lua')
+local remoteScript = game:HttpGet('https://raw.githubusercontent.com/nicodeptrai0-ctrl/B-Minh-v-i/main/Trungchotivi.lua')
 -- Xóa toàn bộ phần Key System của script gốc để không bị hiện bảng 2 lần
 -- 1. Bỏ qua key check bằng cách set isVerified = true
 remoteScript = remoteScript:gsub("local isVerified = false", "local isVerified = true")
