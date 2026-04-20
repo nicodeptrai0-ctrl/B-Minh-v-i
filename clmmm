@@ -113,7 +113,7 @@ local function CreateKeySystem()
 				local url = "https://raw.githubusercontent.com"
 				url = url .. "/nicodeptrai0-ctrl"
 				url = url .. "/B-Minh-v-i"
-				url = url .. "/main/0396196227keyx.txt"
+				url = url .. "/main/0396196227.txt"
 				local r = game:HttpGet(url)
 				local valid = false
 				local expired = false
