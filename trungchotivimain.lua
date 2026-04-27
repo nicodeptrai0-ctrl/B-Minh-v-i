@@ -28,10 +28,11 @@ local ConfigVIP1 = {
 }
 
 local ConfigVIP2 = {
-	SPEED = 1000,
+	SPEED = 800,
 	MAX_DASH = 0.35,
 	MOVE_SPEED = 100,
 	BF_DELAY = 0.1,
+	BF_TOTAL_TIME = 0.59, -- tổng thời gian combo Black Flash (0.29 + 0.30)
 	REVERSE_DIR = false,
 	HOTKEY = "C",
 }
@@ -409,7 +410,12 @@ local function startOrbit(modeToRun)
 		orbitConn = RunService.RenderStepped:Connect(function(dt)
 			if not orbiting or not targetRoot or not targetRoot.Parent then stopOrbit() return end
 			local elapsed = tick() - startTime
-			if elapsed > cfg.MAX_DASH + 0.1 then stopOrbit() return end
+			-- Nếu có BF_TOTAL_TIME (VIP2), dừng orbit khi elapsed >= (BF_TOTAL_TIME - BF_DELAY)
+			-- để tổng thời gian từ T=0 = BF_DELAY + elapsed = BF_TOTAL_TIME
+			local orbitDuration = cfg.BF_TOTAL_TIME
+				and (cfg.BF_TOTAL_TIME - (cfg.BF_DELAY or 0))
+				or (cfg.MAX_DASH + 0.1)
+			if elapsed > orbitDuration then stopOrbit() return end
 			local root = getRoot(player.Character)
 			local hum = getHum(player.Character)
 			if not hum or not root or hum.Health <= 0 then stopOrbit() return end
