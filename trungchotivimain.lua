@@ -31,8 +31,9 @@ local ConfigVIP2 = {
 	SPEED = 800,
 	MAX_DASH = 0.35,
 	MOVE_SPEED = 100,
-	BF_DELAY = 0.1,
+	BF_DELAY = 0,
 	BF_TOTAL_TIME = 0.59, -- tổng thời gian combo Black Flash (0.29 + 0.30)
+	BF_HIT3_ANIM = 0.15,  -- thời gian animation của Hit 3 (chỉnh để sync orbit)
 	REVERSE_DIR = false,
 	HOTKEY = "C",
 }
@@ -413,7 +414,7 @@ local function startOrbit(modeToRun)
 			-- Nếu có BF_TOTAL_TIME (VIP2), dừng orbit khi elapsed >= (BF_TOTAL_TIME - BF_DELAY)
 			-- để tổng thời gian từ T=0 = BF_DELAY + elapsed = BF_TOTAL_TIME
 			local orbitDuration = cfg.BF_TOTAL_TIME
-				and (cfg.BF_TOTAL_TIME - (cfg.BF_DELAY or 0))
+				and (cfg.BF_TOTAL_TIME + (cfg.BF_HIT3_ANIM or 0) - (cfg.BF_DELAY or 0))
 				or (cfg.MAX_DASH + 0.1)
 			if elapsed > orbitDuration then stopOrbit() return end
 			local root = getRoot(player.Character)
