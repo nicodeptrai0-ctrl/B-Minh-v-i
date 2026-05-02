@@ -1,0 +1,135 @@
+
+-- == DEOB HOOK v9 - EXECUTOR API HOOKS ==
+do
+    local _log = {}
+    local _p = print
+    local _t = type
+    local _ts = tostring
+
+    local function safe(v)
+        if _t(v)=="string" then
+            local s = v:gsub("[^\32-\126]",function(c) return string.format("\\x%02x",string.byte(c)) end)
+            if #s>150 then s=s:sub(1,150).."..["..#v.."b]" end
+            return '"'..s..'"'
+        end
+        return _ts(v)
+    end
+
+    local function addL(msg)
+        if #_log < 5000 then
+            table.insert(_log, msg)
+            _p(msg)
+        end
+    end
+
+    -- 1. Hook __namecall to capture ALL method calls (game:GetService, etc)
+    pcall(function()
+        if hookmetamethod and getnamecallmethod then
+            local old_nc = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+                local method = getnamecallmethod()
+                local args = {}
+                for i=1,select('#',...) do
+                    table.insert(args, safe((select(i,...))))
+                end
+                addL("[CALL] "..tostring(self)..":"..method.."("..table.concat(args,", ")..")")
+                return old_nc(self, ...)
+            end))
+            addL("[HOOK] __namecall hooked!")
+        end
+    end)
+
+    -- 2. Hook __index to capture property reads
+    pcall(function()
+        if hookmetamethod then
+            local old_idx = hookmetamethod(game, "__index", newcclosure(function(self, key)
+                local val = old_idx(self, key)
+                if _t(key)=="string" then
+                    addL("[INDEX] "..tostring(self).."."..key.." = "..safe(val))
+                end
+                return val
+            end))
+            addL("[HOOK] __index hooked!")
+        end
+    end)
+
+    -- 3. Hook __newindex to capture property writes
+    pcall(function()
+        if hookmetamethod then
+            local old_ni = hookmetamethod(game, "__newindex", newcclosure(function(self, key, val)
+                if _t(key)=="string" then
+                    addL("[SETPROP] "..tostring(self).."."..key.." = "..safe(val))
+                end
+                return old_ni(self, key, val)
+            end))
+            addL("[HOOK] __newindex hooked!")
+        end
+    end)
+
+    -- 4. Fallback: hook specific global functions
+    pcall(function()
+        if hookfunction then
+            -- Hook require
+            pcall(function()
+                local old_req = hookfunction(require, newcclosure(function(...)
+                    addL("[REQUIRE] "..safe((...)))
+                    return old_req(...)
+                end))
+            end)
+            -- Hook warn
+            pcall(function()
+                local old_warn = hookfunction(warn, newcclosure(function(...)
+                    local args = {}
+                    for i=1,select('#',...) do table.insert(args, safe((select(i,...)))) end
+                    addL("[WARN] "..table.concat(args," "))
+                    return old_warn(...)
+                end))
+            end)
+            addL("[HOOK] Functions hooked!")
+        end
+    end)
+
+    -- 5. Monitor HTTP requests via hookfunction
+    pcall(function()
+        if hookfunction and game and game.HttpGet then
+            local old_hg = hookfunction(game.HttpGet, newcclosure(function(self, url, ...)
+                addL("[HTTP GET] "..safe(url))
+                return old_hg(self, url, ...)
+            end))
+        end
+    end)
+
+    pcall(function()
+        if hookfunction and game and game.HttpPost then
+            local old_hp = hookfunction(game.HttpPost, newcclosure(function(self, url, ...)
+                addL("[HTTP POST] "..safe(url))
+                return old_hp(self, url, ...)
+            end))
+        end
+    end)
+
+    -- 6. Monitor loadstring
+    pcall(function()
+        if hookfunction and loadstring then
+            local old_ls = hookfunction(loadstring, newcclosure(function(src, ...)
+                addL("[LOADSTRING] len="..#src.." preview="..safe(src:sub(1,200)))
+                return old_ls(src, ...)
+            end))
+        end
+    end)
+
+    addL("[+] DEOB HOOK v9 INITIALIZED")
+    addL("[+] Waiting for script execution...")
+
+    -- Copy to clipboard after delay
+    pcall(function()
+        task.defer(function()
+            task.wait(10)
+            local result = table.concat(_log, "\n")
+            _p("\n=== TOTAL: "..#_log.." ENTRIES ===")
+            pcall(function() setclipboard(result) _p("[+] COPIED TO CLIPBOARD") end)
+            pcall(function() toclipboard(result) end)
+        end)
+    end)
+end
+-- == END HOOK v9 ==
+
