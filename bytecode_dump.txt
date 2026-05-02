@@ -1,0 +1,53 @@
+== Main Proto ==
+  params=0, maxstack/numconst=22
+  7 sub-functions
+  232 instructions
+
+FIELD MAPPING:
+  [16891] = name (empty)
+  [48457] = number (22 = max stack or num constants)
+  [44462] = param count (0)
+  [51327] = sub-proto count ref (0)
+  [21851] = sub-prototypes array (7 subs)
+  [61320] = instructions array (232)
+
+INSTRUCTION FIELDS:
+  [54592] = opcode
+  [33813] = A register
+  [7414]  = B register
+  [1145]  = C register
+  [3229]  = constant K (encrypted strings!)
+  [20264] = auxiliary data
+  [27267] = jump offset
+  [55921] = env key 1 (encrypted)
+  [5052]  = env key 2 (encrypted)
+  [51439] = signed value / const index
+  [50651] = sub-opcode
+  [15215] = bool flag
+  [59950] = instruction type marker
+  [21222] = unsigned jump
+
+OPCODES FOUND:
+  4   - LOADNIL / TEST
+  22  - JUMP conditional (15215=false)
+  26  - NEWTABLE (3229=table)
+  42  - CALL with string (encrypted name)
+  46  - RETURN (1145=131 always)
+  49  - JUMP unconditional
+  84  - JUMP BACK (27267=-1)
+  99  - LOADBOOL
+  119 - JUMP FAR
+  121 - GETGLOBAL/GETUPVAL (50651=1,2,3)
+  178 - FORPREP / FORLOOP
+  185 - MOVE registers
+  198 - CALL variant 1
+  200 - CLOSURE / LOADCLOSURE
+  203 - NAMECALL / METHOD CALL
+  214 - LOADK (load encrypted constant, 51439=index)
+  233 - JUMP FAR variant
+  237 - FOR NUMERIC
+  250 - CALL variant 2
+  254 - CALL variant 3
+
+ALL STRINGS ARE ENCRYPTED with XOR key: {.\xCD\xC7\xD9\x42\x14\x0E
+Runtime decryption needed.
