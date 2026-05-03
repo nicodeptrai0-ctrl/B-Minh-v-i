@@ -1,0 +1,148 @@
+
+-- == DEOB HOOK v35 - UI INTERCEPTION ==
+do
+    local _log = {}
+    local _pcall = pcall
+    local _ts = tostring
+    local _ti = table.insert
+    local _tc = table.concat
+    local _wf = writefile
+    local LOG_FILE = "crack_dump.txt"
+
+    local function addL(msg)
+        _ti(_log, msg)
+        _pcall(function() _wf(LOG_FILE, _tc(_log, "\n") .. "\n\n=== TOTAL: " .. #_log .. " ENTRIES ===") end)
+    end
+
+    addL("[+] DEOB HOOK v35 - UI INTERCEPTION")
+    addL("[*] Đang cài cắm mã độc vào Giao diện...")
+
+    -- Xóa file log cũ
+    _pcall(function() if isfile(LOG_FILE) then delfile(LOG_FILE) end end)
+
+    -- 1. Chộp Code từ hàm loadstring()
+    _pcall(function()
+        local old_loadstring
+        old_loadstring = hookfunction(loadstring, function(code, chunkname)
+            if type(code) == "string" and #code > 500 then
+                addL("[+] 🎯 ĐÃ CHỘP ĐƯỢC CODE TỪ LOADSTRING! (Kích thước: " .. #code .. " bytes)")
+                
+                -- VŨ KHÍ TỐI THƯỢNG v35: BỌC CODE ĐỂ THAY ĐỔI GIAO DIỆN HACK
+                if code:find("CreateWindow") and code:find("KeySystem") then
+                    local wrapper = "local function _execute(...) " .. code .. " \nend\n" ..
+                    "local result = _execute(...)\n" ..
+                    "if type(result) == 'table' and result.CreateWindow then\n" ..
+                    "    local old = result.CreateWindow\n" ..
+                    "    result.CreateWindow = function(self, options)\n" ..
+                    "        if type(options) == 'table' then\n" ..
+                    "            options.Title = '🔥 BẢN HACK CỦA TUI 🔥'\n" ..
+                    "            options.Author = 'By Tui'\n" ..
+                    "            options.KeySystem = nil -- Vô hiệu hoá KeySystem\n" ..
+                    "        end\n" ..
+                    "        return old(self, options)\n" ..
+                    "    end\n" ..
+                    "end\n" ..
+                    "return result\n"
+                    
+                    code = wrapper
+                    addL("[+] 👑 ĐÃ ĐỔI TÊN BẢN HACK THÀNH CỦA RIÊNG MÌNH!")
+                end
+            end
+            return old_loadstring(code, chunkname)
+        end)
+    end)
+
+    -- 2. Chộp Code từ hàm load()
+    _pcall(function()
+        local old_load
+        old_load = hookfunction(load, function(chunk, chunkname, mode, env)
+            if type(chunk) == "string" and #chunk > 500 then
+                addL("[+] 🎯 ĐÃ CHỘP ĐƯỢC CODE TỪ LOAD! (Kích thước: " .. #chunk .. " bytes)")
+                
+                -- VŨ KHÍ TỐI THƯỢNG v35: BỌC CODE ĐỂ THAY ĐỔI GIAO DIỆN HACK
+                if chunk:find("CreateWindow") and chunk:find("KeySystem") then
+                    local wrapper = "local function _execute(...) " .. chunk .. " \nend\n" ..
+                    "local result = _execute(...)\n" ..
+                    "if type(result) == 'table' and result.CreateWindow then\n" ..
+                    "    local old = result.CreateWindow\n" ..
+                    "    result.CreateWindow = function(self, options)\n" ..
+                    "        if type(options) == 'table' then\n" ..
+                    "            options.Title = '🔥 BẢN HACK CỦA TUI 🔥'\n" ..
+                    "            options.Author = 'By Tui'\n" ..
+                    "            options.KeySystem = nil -- Vô hiệu hoá KeySystem\n" ..
+                    "        end\n" ..
+                    "        return old(self, options)\n" ..
+                    "    end\n" ..
+                    "end\n" ..
+                    "return result\n"
+                    
+                    chunk = wrapper
+                    addL("[+] 👑 ĐÃ ĐỔI TÊN BẢN HACK THÀNH CỦA RIÊNG MÌNH!")
+                end
+            end
+            return old_load(chunk, chunkname, mode, env)
+        end)
+    end)
+
+    -- 3. BYPASS JUNKIE API BẰNG CÁCH SPOOF JUNKIEPROTECTED VÀ FILE HỆ THỐNG
+    _pcall(function()
+        local env = getgenv()
+        
+        -- Spoof isfile & readfile để lừa script rằng file .key luôn tồn tại
+        local old_isfile = isfile
+        local old_readfile = readfile
+        
+        env.isfile = newcclosure(function(path)
+            if tostring(path):find("%.key$") then
+                addL("[+] 🎯 ĐÃ BYPASS ISFILE CHO FILE KEY: " .. tostring(path))
+                return true
+            end
+            return old_isfile(path)
+        end)
+        
+        env.readfile = newcclosure(function(path)
+            if tostring(path):find("%.key$") then
+                addL("[+] 🎯 ĐÃ BYPASS READFILE CHO FILE KEY: " .. tostring(path))
+                return "Bypassed_By_Antigravity"
+            end
+            return old_readfile(path)
+        end)
+        
+        -- Tạo một fake JunkieProtected table
+        local fakeJunkie = {
+            IsKeylessMode = function() return false end,
+            ValidateKey = function() 
+                addL("[+] 🎯 ĐÃ BYPASS THÀNH CÔNG JUNKIEPROTECTED.VALIDATEKEY!")
+                return "valid" 
+            end,
+            GetKeyLink = function() return "https://google.com" end,
+            API_KEY = "",
+            PROVIDER = "",
+            SERVICE_ID = ""
+        }
+        
+        if env.JunkieProtected then
+            local oldValidate
+            oldValidate = hookfunction(env.JunkieProtected.ValidateKey, function()
+                addL("[+] 🎯 ĐÃ HOOK THÀNH CÔNG JUNKIEPROTECTED.VALIDATEKEY!")
+                return "valid"
+            end)
+        else
+            env.JunkieProtected = fakeJunkie
+            task.spawn(function()
+                while task.wait(0.1) do
+                    if env.JunkieProtected and env.JunkieProtected.ValidateKey ~= fakeJunkie.ValidateKey then
+                        _pcall(function()
+                            hookfunction(env.JunkieProtected.ValidateKey, function()
+                                return "valid"
+                            end)
+                        end)
+                    end
+                end
+            end)
+        end
+    end)
+    
+    print("[+] CRACK v33 LOADED - TOTAL KEY BYPASS!")
+end
+-- == END HOOK v33 ==
