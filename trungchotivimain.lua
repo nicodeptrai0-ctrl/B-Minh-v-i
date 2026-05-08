@@ -1,6 +1,6 @@
 
 -- ================================================
--- BAY ORBIT v19.0 - VIP 1, VIP 2 & SIDE DASH GOD
+-- BAY ORBIT v19.0 - MODE YUJI MODULO & SIDE DASH
 -- ================================================
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -18,20 +18,12 @@ task.spawn(function()
 end)
 
 -- ================== CONFIG ==================
-local ConfigVIP1 = {
-	SPEED = 1000,
-	MAX_DASH = 0.35,
-	BF_DELAY = 0.1,
-	PIN_TIME = 0.3,
-	REVERSE_DIR = false,
-	HOTKEY = "Z",
-}
 
 local ConfigVIP2 = {
 	SPEED = 800,
 	MAX_DASH = 0.35,
 	MOVE_SPEED = 100,
-	BF_DELAY = 0,
+	BF_DELAY = 0.1,
 	BF_TOTAL_TIME = 0.59, -- tổng thời gian combo Black Flash (0.29 + 0.30)
 	BF_HIT3_ANIM = 0.15,  -- thời gian animation của Hit 3 (chỉnh để sync orbit)
 	REVERSE_DIR = false,
@@ -47,7 +39,6 @@ local ConfigSideDash = {
 	HOTKEY = "X",
 }
 
-local godBFEnabled_VIP1 = false
 local godBFEnabled_VIP2 = false
 local sideDashGodEnabled = false
 local espEnabled = false
@@ -57,7 +48,7 @@ local STOP_BEHIND_DIST = 6.0
 local GROUND_OFFSET = 3.4
 local MAX_START_DISTANCE = 15.0
 
-local FACE_TARGET_AFTER = 0.5 -- thời gian hướng mặt vào đối thủ SAU khi orbit xong (giây)
+local FACE_TARGET_AFTER = 0.5
 
 local DASH_RIGHT_ID = "rbxassetid://75203303352791"
 local DASH_LEFT_ID = "rbxassetid://117223862448096"
@@ -104,70 +95,6 @@ local function triggerDFist()
 	if not dfist then return false end
 	activateRE:FireServer(dfist)
 	return true
-end
-
-local function blackflash_VIP1(tRoot)
-	if not triggerDFist() then return end
-	task.wait(0.29)
-	if not triggerDFist() then return end
-	task.wait(0.30)
-
-	local chr = player.Character
-	if not chr then return end
-
-	-- SIÊU GHIM (Ping Prediction + No Collide để đấm mượt dù xoay camera loạn xạ)
-	local myRoot = getRoot(chr)
-	local myHum = getHum(chr)
-	if myRoot and tRoot and tRoot.Parent then
-		local pinStart = tick()
-		local pinDuration = 0.5 -- Thời gian ghim đủ 0.5s để tung hit
-		local rsConn
-		
-		local oldAuto = true
-		if myHum then 
-			oldAuto = myHum.AutoRotate
-			myHum.AutoRotate = false 
-		end
-		
-		if faceConn then faceConn:Disconnect() faceConn = nil end
-		
-		rsConn = RunService.RenderStepped:Connect(function()
-			if tick() - pinStart > pinDuration or not tRoot or not tRoot.Parent or not myRoot or not myRoot.Parent then
-				if rsConn then rsConn:Disconnect() end
-				if myHum then myHum.AutoRotate = oldAuto end
-				-- Bật lại va chạm
-				for _, part in ipairs(chr:GetDescendants()) do
-					if part:IsA("BasePart") then part.CanCollide = true end
-				end
-				if tRoot and tRoot.Parent then startFaceTarget(tRoot) end
-				return
-			end
-			
-			-- TẮT VA CHẠM (No-Collide): Đứng xuyên vào địch mà không làm cả hai bị văng đi
-			for _, part in ipairs(chr:GetDescendants()) do
-				if part:IsA("BasePart") then part.CanCollide = false end
-			end
-			
-			myRoot.AssemblyLinearVelocity = v3zero
-			myRoot.AssemblyAngularVelocity = v3zero
-			
-			-- PING PREDICTION (Dự đoán góc xoay): Tính toán trước lưng địch sẽ ở đâu sau 0.15s
-			local angVel = tRoot.AssemblyAngularVelocity
-			local spinSpeed = clamp(angVel.Y, -30, 30) -- Giới hạn tốc độ xoay để không bay quá xa
-			local predictedCF = tRoot.CFrame * CFrame.Angles(0, spinSpeed * 0.15, 0)
-			
-			local flatVector = v3(predictedCF.LookVector.X, 0, predictedCF.LookVector.Z)
-			local flatLook = (flatVector.Magnitude > 0.001) and flatVector.Unit or v3(0, 0, -1)
-			
-			local PIN_DIST = 2.0 -- Đứng cực gần để hitbox đấm chắc chắn trúng
-			local targetPos = tRoot.Position
-			local behindPos = targetPos - flatLook * PIN_DIST
-			
-			myRoot.CFrame = CFrame.lookAt(behindPos, targetPos)
-		end)
-	end
-
-	triggerDFist()
 end
 
 local function blackflash_VIP2(tRoot)
@@ -315,8 +242,7 @@ local function startOrbit(modeToRun)
 	hum.AutoRotate = false
 
 	local cfg = ConfigVIP2
-	if modeToRun == "VIP1" then cfg = ConfigVIP1
-	elseif modeToRun == "VIP2" then cfg = ConfigVIP2
+	if modeToRun == "VIP2" then cfg = ConfigVIP2
 	elseif modeToRun == "SIDE_DASH" then cfg = ConfigSideDash end
 
 	local initialAngle = getSignedAngle(tRoot, root.Position)
@@ -344,126 +270,78 @@ local function startOrbit(modeToRun)
 	rayParams.FilterDescendantsInstances = {char}
 	smoothedAngle = initialAngle
 
-	if modeToRun == "VIP1" then
-		-- ================= VIP 1: ORBIT CÓ GHIM =================
-		orbitConn = RunService.RenderStepped:Connect(function(dt)
-			if not orbiting or not targetRoot or not targetRoot.Parent then stopOrbit() return end
-			
-			local root = getRoot(player.Character)
-			local hum = getHum(player.Character)
-			if not hum or not root or hum.Health <= 0 then stopOrbit() return end
+	-- ================= MODE YJI & SIDE DASH =================
+	local currentRadius = modeToRun == "SIDE_DASH" and 5.0 or 6.0
+	local currentStopDist = modeToRun == "SIDE_DASH" and 5.0 or 6.0
 
-			local elapsed = tick() - startTime
-			if elapsed > cfg.MAX_DASH + cfg.PIN_TIME then 
-				for _, part in ipairs(char:GetDescendants()) do
-					if part:IsA("BasePart") then part.CanCollide = true end
-				end
-				stopOrbit() 
-				return 
-			end
+	bodyVelocity = Instance.new("BodyVelocity")
+	bodyVelocity.MaxForce = v3(65000, 3500, 65000)
+	bodyVelocity.Velocity = v3zero
+	bodyVelocity.Parent = root
 
-			for _, part in ipairs(char:GetDescendants()) do
-				if part:IsA("BasePart") then part.CanCollide = false end
-			end
-			
-			local angVel = tRoot.AssemblyAngularVelocity
-			local spinSpeed = clamp(angVel.Y, -30, 30) 
-			local predictedCF = tRoot.CFrame * CFrame.Angles(0, spinSpeed * 0.15, 0)
-			local flatVector = v3(predictedCF.LookVector.X, 0, predictedCF.LookVector.Z)
-			local flatLook = (flatVector.Magnitude > 0.001) and flatVector.Unit or v3(0, 0, -1)
-			
-			local PIN_DIST = 4.0 
-			local behindPos = tRoot.Position - flatLook * PIN_DIST
-			
-			local progress = clamp(elapsed / cfg.MAX_DASH, 0, 1)
-			
-			if progress >= 1 and dashTrack and dashTrack.IsPlaying then
-				dashTrack:Stop()
-			end
-			
-			smoothedAngle = smoothedAngle + orbitDirection * rad(cfg.SPEED) * dt * 1.12
-			local localOffset = v3(sin(smoothedAngle) * ORBIT_RADIUS, 0, -cos(smoothedAngle) * ORBIT_RADIUS)
-			local orbitPos = tRoot.Position + tRoot.CFrame:VectorToWorldSpace(localOffset)
-			
-			local goalFlat = orbitPos:Lerp(behindPos, progress ^ 1.5)
-			local goalPos = v3(goalFlat.X, tRoot.Position.Y, goalFlat.Z)
-			
-			root.AssemblyLinearVelocity = v3zero
-			root.AssemblyAngularVelocity = v3zero
-			root.CFrame = CFrame.lookAt(goalPos, v3(tRoot.Position.X, root.Position.Y, tRoot.Position.Z))
-		end)
-	else
-		-- ================= VIP 2 & SIDE DASH: ORBIT MƯỢT KHÔNG GHIM =================
-		local currentRadius = modeToRun == "SIDE_DASH" and 5.0 or 6.0
-		local currentStopDist = modeToRun == "SIDE_DASH" and 5.0 or 6.0
+	bodyGyro = Instance.new("BodyGyro")
+	bodyGyro.MaxTorque = v3(0, huge, 0)
+	bodyGyro.P = 95000
+	bodyGyro.D = 3000
+	bodyGyro.Parent = root
 
-		bodyVelocity = Instance.new("BodyVelocity")
-		bodyVelocity.MaxForce = v3(65000, 3500, 65000)
-		bodyVelocity.Velocity = v3zero
-		bodyVelocity.Parent = root
+	orbitConn = RunService.RenderStepped:Connect(function(dt)
+		if not orbiting or not targetRoot or not targetRoot.Parent then stopOrbit() return end
+		local elapsed = tick() - startTime
+		local orbitDuration = cfg.BF_TOTAL_TIME
+			and (cfg.BF_TOTAL_TIME + (cfg.BF_HIT3_ANIM or 0) - (cfg.BF_DELAY or 0))
+			or (cfg.MAX_DASH + 0.1)
+		if elapsed > orbitDuration then stopOrbit() return end
+		local root = getRoot(player.Character)
+		local hum = getHum(player.Character)
+		if not hum or not root or hum.Health <= 0 then stopOrbit() return end
 
-		bodyGyro = Instance.new("BodyGyro")
-		bodyGyro.MaxTorque = v3(0, huge, 0)
-		bodyGyro.P = 95000
-		bodyGyro.D = 3000
-		bodyGyro.Parent = root
+		local behindPos = tRoot.Position - tRoot.CFrame.LookVector * currentStopDist
+		smoothedAngle = smoothedAngle + orbitDirection * rad(cfg.SPEED) * dt * 1.12
+		local localOffset = v3(sin(smoothedAngle) * currentRadius, 0, -cos(smoothedAngle) * currentRadius)
+		local orbitPos = tRoot.Position + tRoot.CFrame:VectorToWorldSpace(localOffset)
+		local progress = clamp(elapsed / cfg.MAX_DASH, 0, 1)
+		local goalFlat = orbitPos:Lerp(behindPos, progress ^ 1.5)
+		local rayResult = Workspace:Raycast(root.Position + v3(0, 20, 0), v3(0, -50, 0), rayParams)
+		local targetY = rayResult and (rayResult.Position.Y + GROUND_OFFSET) or (root.Position.Y + 0.3)
+		local goalPos = v3(goalFlat.X, targetY, goalFlat.Z)
+		local toGoal = goalPos - root.Position
+		if toGoal.Magnitude > 0.5 then
+			local targetVel = toGoal.Unit * (cfg.MOVE_SPEED * clamp(toGoal.Magnitude / 6, 0.4, 1.1))
+			currentVelocity = currentVelocity:Lerp(targetVel, 0.18)
+		else
+			currentVelocity = currentVelocity * 0.85
+		end
 
-		orbitConn = RunService.RenderStepped:Connect(function(dt)
-			if not orbiting or not targetRoot or not targetRoot.Parent then stopOrbit() return end
-			local elapsed = tick() - startTime
-			-- Nếu có BF_TOTAL_TIME (VIP2), dừng orbit khi elapsed >= (BF_TOTAL_TIME - BF_DELAY)
-			-- để tổng thời gian từ T=0 = BF_DELAY + elapsed = BF_TOTAL_TIME
-			local orbitDuration = cfg.BF_TOTAL_TIME
-				and (cfg.BF_TOTAL_TIME + (cfg.BF_HIT3_ANIM or 0) - (cfg.BF_DELAY or 0))
-				or (cfg.MAX_DASH + 0.1)
-			if elapsed > orbitDuration then stopOrbit() return end
-			local root = getRoot(player.Character)
-			local hum = getHum(player.Character)
-			if not hum or not root or hum.Health <= 0 then stopOrbit() return end
+		if bodyVelocity then bodyVelocity.Velocity = currentVelocity end
 
-			local behindPos = tRoot.Position - tRoot.CFrame.LookVector * currentStopDist
-			smoothedAngle = smoothedAngle + orbitDirection * rad(cfg.SPEED) * dt * 1.12
-			local localOffset = v3(sin(smoothedAngle) * currentRadius, 0, -cos(smoothedAngle) * currentRadius)
-			local orbitPos = tRoot.Position + tRoot.CFrame:VectorToWorldSpace(localOffset)
-			local progress = clamp(elapsed / cfg.MAX_DASH, 0, 1)
-			local goalFlat = orbitPos:Lerp(behindPos, progress ^ 1.5)
-			local rayResult = Workspace:Raycast(root.Position + v3(0, 20, 0), v3(0, -50, 0), rayParams)
-			local targetY = rayResult and (rayResult.Position.Y + GROUND_OFFSET) or (root.Position.Y + 0.3)
-			local goalPos = v3(goalFlat.X, targetY, goalFlat.Z)
-			local toGoal = goalPos - root.Position
-			if toGoal.Magnitude > 0.5 then
-				local targetVel = toGoal.Unit * (cfg.MOVE_SPEED * clamp(toGoal.Magnitude / 6, 0.4, 1.1))
-				currentVelocity = currentVelocity:Lerp(targetVel, 0.18)
-			else
-				currentVelocity = currentVelocity * 0.85
-			end
-
-			if bodyVelocity then bodyVelocity.Velocity = currentVelocity end
-
-			local toTargetFlat = (tRoot.Position - root.Position) * v3(1, 0, 1)
-			if toTargetFlat.Magnitude > 0.35 then
-				local goalCFrame = CFrame.lookAt(root.Position, root.Position + toTargetFlat.Unit)
-				if bodyGyro then bodyGyro.CFrame = goalCFrame end
-				root.CFrame = root.CFrame:Lerp(goalCFrame, 0.88)
-			end
-		end)
-	end
+		local toTargetFlat = (tRoot.Position - root.Position) * v3(1, 0, 1)
+		if toTargetFlat.Magnitude > 0.35 then
+			local goalCFrame = CFrame.lookAt(root.Position, root.Position + toTargetFlat.Unit)
+			if bodyGyro then bodyGyro.CFrame = goalCFrame end
+			root.CFrame = root.CFrame:Lerp(goalCFrame, 0.88)
+		end
+	end)
 end
 
 -- ================== XENON HUB GUI ==================
 local function createConfigMenu()
-	local ACCENT = Color3.fromRGB(60, 140, 255)
-	local ACCENT_DARK = Color3.fromRGB(30, 80, 180)
-	local BG_MAIN = Color3.fromRGB(22, 24, 32)
-	local BG_SIDE = Color3.fromRGB(28, 30, 40)
-	local BG_TOP = Color3.fromRGB(26, 28, 38)
-	local BG_INPUT = Color3.fromRGB(35, 38, 50)
-	local TEXT_W = Color3.fromRGB(220, 225, 240)
-	local TEXT_DIM = Color3.fromRGB(140, 145, 165)
-	local DIVIDER = Color3.fromRGB(45, 48, 60)
-	local TOGGLE_ON = Color3.fromRGB(60, 200, 120)
-	local TOGGLE_OFF = Color3.fromRGB(70, 72, 85)
-	local DANGER = Color3.fromRGB(200, 50, 70)
+	-- Professional Dark Blue Theme
+	local ACCENT = Color3.fromRGB(30, 100, 220)
+	local ACCENT_LIGHT = Color3.fromRGB(50, 130, 255)
+	local ACCENT_GLOW = Color3.fromRGB(20, 80, 180)
+	local BG_MAIN = Color3.fromRGB(12, 14, 22)
+	local BG_SIDE = Color3.fromRGB(16, 18, 28)
+	local BG_TOP = Color3.fromRGB(18, 20, 32)
+	local BG_INPUT = Color3.fromRGB(25, 28, 42)
+	local BG_CARD = Color3.fromRGB(20, 23, 35)
+	local TEXT_W = Color3.fromRGB(230, 235, 245)
+	local TEXT_DIM = Color3.fromRGB(100, 110, 140)
+	local TEXT_ACCENT = Color3.fromRGB(60, 140, 255)
+	local DIVIDER = Color3.fromRGB(35, 40, 55)
+	local TOGGLE_ON = Color3.fromRGB(30, 150, 230)
+	local TOGGLE_OFF = Color3.fromRGB(50, 52, 70)
+	local DANGER = Color3.fromRGB(180, 45, 60)
 
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "OrbitConfigMenu"
@@ -498,13 +376,13 @@ local function createConfigMenu()
 	titleLbl.Position = UDim2.new(0, 14, 0, 0)
 	titleLbl.BackgroundTransparency = 1
 	titleLbl.RichText = true
-	titleLbl.Text = '<font color="#3C8CFF"><b>Bố Minh</b></font> <font color="#A0C4FF">VĨ ĐẠI</font>'
+	titleLbl.Text = '<font color="#2D7FFF"><b>Bố Minh</b></font> <font color="#6BAAFF">VĨ ĐẠI</font>'
 	titleLbl.TextXAlignment = Enum.TextXAlignment.Left
 	titleLbl.Font = Enum.Font.GothamBlack
-	titleLbl.TextSize = 16
+	titleLbl.TextSize = 17
 	titleLbl.TextColor3 = ACCENT
-	titleLbl.TextStrokeTransparency = 0.6
-	titleLbl.TextStrokeColor3 = Color3.fromRGB(10, 20, 50)
+	titleLbl.TextStrokeTransparency = 0.5
+	titleLbl.TextStrokeColor3 = Color3.fromRGB(5, 15, 40)
 	titleLbl.Parent = topBar
 
 	local subLbl = Instance.new("TextLabel")
@@ -635,9 +513,9 @@ local function createConfigMenu()
 	-- Sidebar buttons
 	local sideButtons = {}
 	local tabNames = {
-		{name = "General", icon = "⚙️"},
-		{name = "Features", icon = "⚡"},
-		{name = "Config", icon = "🔧"},
+		{name = "General", icon = ""},
+		{name = "Features", icon = ""},
+		{name = "Config", icon = ""},
 	}
 
 	local function selectTab(tabName)
@@ -693,13 +571,13 @@ local function createConfigMenu()
 	-- ===== HELPER: SECTION TITLE =====
 	local function addSectionTitle(parent, text, order)
 		local lbl = Instance.new("TextLabel")
-		lbl.Size = UDim2.new(1, 0, 0, 24)
+		lbl.Size = UDim2.new(1, 0, 0, 22)
 		lbl.BackgroundTransparency = 1
 		lbl.Text = text
-		lbl.TextColor3 = ACCENT
+		lbl.TextColor3 = ACCENT_LIGHT
 		lbl.TextXAlignment = Enum.TextXAlignment.Left
 		lbl.Font = Enum.Font.GothamBold
-		lbl.TextSize = 13
+		lbl.TextSize = 12
 		lbl.LayoutOrder = order
 		lbl.Parent = parent
 	end
@@ -740,7 +618,7 @@ local function createConfigMenu()
 	local function addToggle(parent, labelText, initial, order, callback)
 		local row = Instance.new("Frame")
 		row.Size = UDim2.new(1, 0, 0, 34)
-		row.BackgroundColor3 = BG_INPUT
+		row.BackgroundColor3 = BG_CARD
 		row.LayoutOrder = order
 		row.Parent = parent
 		Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
@@ -755,7 +633,7 @@ local function createConfigMenu()
 		l.TextColor3 = TEXT_W
 		l.TextXAlignment = Enum.TextXAlignment.Left
 		l.Font = Enum.Font.GothamSemibold
-		l.TextSize = 12
+		l.TextSize = 13
 		l.Parent = row
 
 		local togBg = Instance.new("TextButton")
@@ -851,7 +729,7 @@ local function createConfigMenu()
 	-- =========================================
 	-- PAGE: GENERAL
 	-- =========================================
-	addSectionTitle(pageGeneral, "📊 Status", 1)
+	addSectionTitle(pageGeneral, "STATUS", 1)
 	local statusVal = addInfoRow(pageGeneral, "Script Status", "ON", 2)
 	addInfoRow(pageGeneral, "Hotkey Orbit", "Custom (Check Config)", 3)
 	addInfoRow(pageGeneral, "Toggle ON/OFF", "Insert", 4)
@@ -863,28 +741,24 @@ local function createConfigMenu()
 	gDiv.LayoutOrder = 5
 	gDiv.Parent = pageGeneral
 
-	addSectionTitle(pageGeneral, "ℹ️ Info", 6)
-	addInfoRow(pageGeneral, "Version", "v19.0 (VIP SEPARATE)", 7)
+	addSectionTitle(pageGeneral, "INFORMATION", 6)
+	addInfoRow(pageGeneral, "Version", "v19.0 (Mode Yuji)", 7)
 	addInfoRow(pageGeneral, "Author", "Synzji", 8)
 
 	-- =========================================
 	-- PAGE: FEATURES
 	-- =========================================
-	addSectionTitle(pageFeatures, "⚔️ Combat", 1)
+	addSectionTitle(pageFeatures, "COMBAT", 1)
 
-	addToggle(pageFeatures, "🔥 GOD Black Flash VIP 1 (Có Ghim)", godBFEnabled_VIP1, 2, function(state)
-		godBFEnabled_VIP1 = state
-	end)
-
-	addToggle(pageFeatures, "🔥 GOD Black Flash VIP 2 (Không Ghim)", godBFEnabled_VIP2, 3, function(state)
+	addToggle(pageFeatures, "Mode Yuji Modulo ?", godBFEnabled_VIP2, 3, function(state)
 		godBFEnabled_VIP2 = state
 	end)
 
-	addToggle(pageFeatures, "⚡ Side Dash GOD (Chỉ Lướt)", sideDashGodEnabled, 4, function(state)
+	addToggle(pageFeatures, "Side Dash GOD (Dash Only)", sideDashGodEnabled, 4, function(state)
 		sideDashGodEnabled = state
 	end)
 
-	addToggle(pageFeatures, "🎯 Aimbot", false, 5, function(state)
+	addToggle(pageFeatures, "Aimbot", false, 5, function(state)
 		if state and not aimbotLoaded then
 			aimbotLoaded = true
 			task.spawn(function()
@@ -900,29 +774,16 @@ local function createConfigMenu()
 	fDiv.LayoutOrder = 6
 	fDiv.Parent = pageFeatures
 
-	addSectionTitle(pageFeatures, "👁️ Visuals", 7)
+	addSectionTitle(pageFeatures, "VISUALS", 7)
 
-	addToggle(pageFeatures, "👁️ ESP (Box/Name/Health)", false, 8, function(state)
+	addToggle(pageFeatures, "ESP (Box/Name/Health)", false, 8, function(state)
 		espEnabled = state
 	end)
 
 	-- =========================================
 	-- PAGE: CONFIG
 	-- =========================================
-	addSectionTitle(pageConfig, "🔄 VIP 1 Settings", 1)
-
-	local tbSpeed1 = addInputRow(pageConfig, "SPEED", "SPEED", 2, ConfigVIP1)
-	local tbDash1 = addInputRow(pageConfig, "MAX DASH", "MAX_DASH", 3, ConfigVIP1)
-	local tbKey1 = addInputRow(pageConfig, "HOTKEY", "HOTKEY", 4, ConfigVIP1)
-
-	local cDiv1 = Instance.new("Frame")
-	cDiv1.Size = UDim2.new(1, 0, 0, 1)
-	cDiv1.BackgroundColor3 = DIVIDER
-	cDiv1.BorderSizePixel = 0
-	cDiv1.LayoutOrder = 5
-	cDiv1.Parent = pageConfig
-
-	addSectionTitle(pageConfig, "🔄 VIP 2 Settings", 6)
+	addSectionTitle(pageConfig, "MODE YUJI SETTINGS", 6)
 
 	local tbSpeed2 = addInputRow(pageConfig, "SPEED", "SPEED", 7, ConfigVIP2)
 	local tbDash2 = addInputRow(pageConfig, "MAX DASH", "MAX_DASH", 8, ConfigVIP2)
@@ -935,7 +796,7 @@ local function createConfigMenu()
 	cDiv2.LayoutOrder = 10
 	cDiv2.Parent = pageConfig
 
-	addSectionTitle(pageConfig, "⚡ Side Dash GOD Settings", 11)
+	addSectionTitle(pageConfig, "SIDE DASH SETTINGS", 11)
 
 	local tbSpeed3 = addInputRow(pageConfig, "SPEED", "SPEED", 12, ConfigSideDash)
 	local tbDash3 = addInputRow(pageConfig, "MAX DASH", "MAX_DASH", 13, ConfigSideDash)
@@ -952,8 +813,8 @@ local function createConfigMenu()
 	-- Reset button
 	local resetBtn = Instance.new("TextButton")
 	resetBtn.Size = UDim2.new(1, 0, 0, 32)
-	resetBtn.BackgroundColor3 = ACCENT_DARK
-	resetBtn.Text = "🔄 Reset to Default"
+	resetBtn.BackgroundColor3 = ACCENT
+	resetBtn.Text = "RESET TO DEFAULT"
 	resetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	resetBtn.Font = Enum.Font.GothamBold
 	resetBtn.TextSize = 12
@@ -962,11 +823,9 @@ local function createConfigMenu()
 	Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0, 6)
 
 	resetBtn.MouseButton1Click:Connect(function()
-		ConfigVIP1.SPEED = 1000; ConfigVIP1.MAX_DASH = 0.35; ConfigVIP1.BF_DELAY = 0.1; ConfigVIP1.PIN_TIME = 0.3; ConfigVIP1.REVERSE_DIR = false; ConfigVIP1.HOTKEY = "Z"
 		ConfigVIP2.SPEED = 1000; ConfigVIP2.MAX_DASH = 0.35; ConfigVIP2.MOVE_SPEED = 100; ConfigVIP2.BF_DELAY = 0.1; ConfigVIP2.REVERSE_DIR = false; ConfigVIP2.HOTKEY = "X"
 		ConfigSideDash.SPEED = 950; ConfigSideDash.MAX_DASH = 0.35; ConfigSideDash.MOVE_SPEED = 100; ConfigSideDash.DISTANCE = 15.0; ConfigSideDash.REVERSE_DIR = false; ConfigSideDash.HOTKEY = "C"
 		
-		tbSpeed1.Text = "1000"; tbDash1.Text = "0.35"; tbKey1.Text = "Z"
 		tbSpeed2.Text = "1000"; tbDash2.Text = "0.35"; tbKey2.Text = "X"
 		tbSpeed3.Text = "950"; tbDash3.Text = "0.35"; tbDist3.Text = "15.0"; tbKey3.Text = "C"
 	end)
@@ -976,7 +835,7 @@ local function createConfigMenu()
 	resizeHandle.Size = UDim2.new(0, 18, 0, 18)
 	resizeHandle.Position = UDim2.new(1, -18, 1, -18)
 	resizeHandle.BackgroundColor3 = Color3.fromRGB(60, 65, 80)
-	resizeHandle.Text = "⤡"
+	resizeHandle.Text = ""
 	resizeHandle.TextColor3 = TEXT_DIM
 	resizeHandle.Font = Enum.Font.GothamBold
 	resizeHandle.TextSize = 10
@@ -1034,8 +893,7 @@ UIS.InputBegan:Connect(function(input, gameProcessed)
 	local keyName = input.KeyCode.Name
 	local modeToRun = nil
 	
-	if godBFEnabled_VIP1 and keyName == ConfigVIP1.HOTKEY then modeToRun = "VIP1"
-	elseif godBFEnabled_VIP2 and keyName == ConfigVIP2.HOTKEY then modeToRun = "VIP2"
+	if godBFEnabled_VIP2 and keyName == ConfigVIP2.HOTKEY then modeToRun = "VIP2"
 	elseif sideDashGodEnabled and keyName == ConfigSideDash.HOTKEY then modeToRun = "SIDE_DASH"
 	end
 
@@ -1055,16 +913,13 @@ UIS.InputBegan:Connect(function(input, gameProcessed)
 			local tRoot = getClosestTarget(modeToRun)
 			if not tRoot then return end
 			
-			if modeToRun == "VIP1" then
-				task.spawn(blackflash_VIP1, tRoot)
-			elseif modeToRun == "VIP2" then
+			if modeToRun == "VIP2" then
 				task.spawn(blackflash_VIP2, tRoot)
 			end
 			
 			task.spawn(function()
 				local currentDelay = 0
-				if modeToRun == "VIP1" then currentDelay = ConfigVIP1.BF_DELAY
-				elseif modeToRun == "VIP2" then currentDelay = ConfigVIP2.BF_DELAY
+				if modeToRun == "VIP2" then currentDelay = ConfigVIP2.BF_DELAY
 				elseif modeToRun == "SIDE_DASH" then currentDelay = 0 end
 				
 				task.wait(currentDelay)
