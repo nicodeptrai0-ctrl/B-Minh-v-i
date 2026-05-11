@@ -14,9 +14,8 @@ local player = Players.LocalPlayer
 local enabled = true
 local orbiting = false
 
-task.spawn(function()
-	loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
-end)
+-- Infinite Yield loaded on startup (user opt-in, runs after Intro Dialog decision)
+-- The actual loading is triggered from the toggle in "Other scripts" page
 
 -- ================== CONFIG ==================
 
@@ -355,6 +354,8 @@ local Theme = {
 	Warning = Color3.fromRGB(180, 140, 60),     -- Muted yellow
 	Danger = Color3.fromRGB(180, 70, 70),       -- Muted red
 	Purple = Color3.fromRGB(120, 100, 180),     -- Muted purple
+	Success = Color3.fromRGB(70, 150, 100),      -- Muted green
+	Warning = Color3.fromRGB(200, 180, 60),      -- Yellow
 }
 
 -- ================== GUI ==================
@@ -460,8 +461,8 @@ local function createGUI()
 
 	-- Window Buttons
 	local buttonsContainer = Instance.new("Frame")
-	buttonsContainer.Size = UDim2.new(0, 120, 0, 30)
-	buttonsContainer.Position = UDim2.new(1, -128, 0.5, -15)
+	buttonsContainer.Size = UDim2.new(0, 80, 0, 30)
+	buttonsContainer.Position = UDim2.new(1, -88, 0.5, -15)
 	buttonsContainer.BackgroundTransparency = 1
 	buttonsContainer.Parent = topbar
 
@@ -473,7 +474,7 @@ local function createGUI()
 	-- Minimize Button
 	local minBtn = Instance.new("TextButton")
 	minBtn.Size = UDim2.new(0, 30, 0, 30)
-	minBtn.BackgroundColor3 = Theme.SurfaceHover
+	minBtn.BackgroundColor3 = Theme.Warning
 	minBtn.BackgroundTransparency = 0.5
 	minBtn.Text = ""
 	minBtn.Parent = buttonsContainer
@@ -485,26 +486,8 @@ local function createGUI()
 	minIcon.Text = "-"
 	minIcon.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
 	minIcon.TextSize = 16
-	minIcon.TextColor3 = Theme.TextMuted
+	minIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
 	minIcon.Parent = minBtn
-
-	-- Maximize Button
-	local maxBtn = Instance.new("TextButton")
-	maxBtn.Size = UDim2.new(0, 30, 0, 30)
-	maxBtn.BackgroundColor3 = Theme.SurfaceHover
-	maxBtn.BackgroundTransparency = 0.5
-	maxBtn.Text = ""
-	maxBtn.Parent = buttonsContainer
-	Instance.new("UICorner", maxBtn).CornerRadius = UDim.new(0, 6)
-
-	local maxIcon = Instance.new("TextLabel")
-	maxIcon.Size = UDim2.new(1, 0, 1, 0)
-	maxIcon.BackgroundTransparency = 1
-	maxIcon.Text = "[ ]"
-	maxIcon.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
-	maxIcon.TextSize = 10
-	maxIcon.TextColor3 = Theme.TextMuted
-	maxIcon.Parent = maxBtn
 
 	-- Close Button
 	local closeBtn = Instance.new("TextButton")
@@ -521,26 +504,105 @@ local function createGUI()
 	closeIcon.Text = "X"
 	closeIcon.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
 	closeIcon.TextSize = 12
-	closeIcon.TextColor3 = Theme.Text
+	closeIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
 	closeIcon.Parent = closeBtn
 
 	-- Button Hover Effects
-	local function addButtonHover(btn, normalTransparency)
-		btn.MouseEnter:Connect(function()
-			TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
-		end)
-		btn.MouseLeave:Connect(function()
-			TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = normalTransparency}):Play()
-		end)
-	end
-	addButtonHover(minBtn, 0.5)
-	addButtonHover(maxBtn, 0.5)
-	addButtonHover(closeBtn, 0.6)
+	minBtn.MouseEnter:Connect(function()
+		TweenService:Create(minBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
+	end)
+	minBtn.MouseLeave:Connect(function()
+		TweenService:Create(minBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.5}):Play()
+	end)
+
+	closeBtn.MouseEnter:Connect(function()
+		TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
+	end)
+	closeBtn.MouseLeave:Connect(function()
+		TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.6}):Play()
+	end)
 
 	closeBtn.MouseButton1Click:Connect(function()
 		TweenService:Create(mainWindow, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 0, 0, 0)}):Play()
 		task.wait(0.3)
 		screenGui:Destroy()
+	end)
+
+	-- Minimize Button - Draggable indicator at top-center
+	minBtn.MouseButton1Click:Connect(function()
+		mainWindow.Visible = false
+		local indicator = Instance.new("Frame")
+		indicator.Name = "MinimizeIndicator"
+		indicator.Size = UDim2.new(0, 160, 0, 36)
+		indicator.Position = UDim2.new(0.5, -80, 0, 20)
+		indicator.AnchorPoint = Vector2.new(0.5, 0)
+		indicator.BackgroundColor3 = Theme.Surface
+		indicator.BackgroundTransparency = 0.15
+		indicator.BorderSizePixel = 0
+		indicator.Parent = screenGui
+		Instance.new("UICorner", indicator).CornerRadius = UDim.new(0, 8)
+		
+		local indStroke = Instance.new("UIStroke", indicator)
+		indStroke.Color = Theme.Accent
+		indStroke.Thickness = 1.5
+		indStroke.Transparency = 0.4
+		
+		local indLbl = Instance.new("TextLabel")
+		indLbl.Size = UDim2.new(1, 0, 1, 0)
+		indLbl.BackgroundTransparency = 1
+		indLbl.Text = "BMVD - Click to open"
+		indLbl.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
+		indLbl.TextSize = 12
+		indLbl.TextColor3 = Theme.Text
+		indLbl.Parent = indicator
+
+		local dragging, dragStart, startPos
+		local isClick = false
+		local clickProcessed = false
+
+		indicator.InputBegan:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = true
+				isClick = true
+				clickProcessed = false
+				dragStart = i.Position
+				startPos = indicator.Position
+			end
+		end)
+
+		indicator.InputChanged:Connect(function(i)
+			if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+				local delta = i.Position - dragStart
+				local dist = math.sqrt(delta.X * delta.X + delta.Y * delta.Y)
+				if dist > 5 then
+					isClick = false
+				end
+				indicator.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+				dragStart = i.Position
+			end
+		end)
+
+		indicator.InputEnded:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.MouseButton1 then
+				if isClick and not clickProcessed then
+					clickProcessed = true
+					indicator:Destroy()
+					mainWindow.Visible = true
+					TweenService:Create(mainWindow, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Size = UDim2.new(0, 680, 0, 500)}):Play()
+				end
+				dragging = false
+			end
+		end)
+
+		-- Hover effect
+		indicator.MouseEnter:Connect(function()
+			TweenService:Create(indicator, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
+			TweenService:Create(indStroke, TweenInfo.new(0.2), {Transparency = 0.2}):Play()
+		end)
+		indicator.MouseLeave:Connect(function()
+			TweenService:Create(indicator, TweenInfo.new(0.2), {BackgroundTransparency = 0.15}):Play()
+			TweenService:Create(indStroke, TweenInfo.new(0.2), {Transparency = 0.4}):Play()
+		end)
 	end)
 
 	-- Dragging
@@ -604,7 +666,7 @@ local function createGUI()
 		{name = "Home", iconText = "H"},
 		{name = "Combat", iconText = "C"},
 		{name = "Config", iconText = "S"},
-		{name = "Other", iconText = "O"},
+		{name = "Other scripts", iconText = "O"},
 	}
 
 	local pages = {}
@@ -721,11 +783,15 @@ local function createGUI()
 		btn.MouseEnter:Connect(function()
 			if activeTab ~= tab.name then
 				TweenService:Create(btnBg, TweenInfo.new(0.15), {BackgroundTransparency = 0.5}):Play()
+				TweenService:Create(iconLbl, TweenInfo.new(0.15), {BackgroundColor3 = Theme.SurfaceActive, TextColor3 = Theme.Text}):Play()
+				TweenService:Create(textLbl, TweenInfo.new(0.15), {TextColor3 = Theme.Text}):Play()
 			end
 		end)
 		btn.MouseLeave:Connect(function()
 			if activeTab ~= tab.name then
 				TweenService:Create(btnBg, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
+				TweenService:Create(iconLbl, TweenInfo.new(0.15), {BackgroundColor3 = Theme.SurfaceHover, TextColor3 = Theme.TextMuted}):Play()
+				TweenService:Create(textLbl, TweenInfo.new(0.15), {TextColor3 = Theme.TextMuted}):Play()
 			end
 		end)
 	end
@@ -880,7 +946,10 @@ local function createGUI()
 	local function addButton(parent, label, color, order, callback)
 		color = color or Theme.Accent
 		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(1, 0, 0, 44)
+		local origWidth = 0
+		-- Store original size for tweening
+		local origSize = UDim2.new(1, 0, 0, 44)
+		btn.Size = origSize
 		btn.BackgroundColor3 = color
 		btn.BackgroundTransparency = 0.15
 		btn.Text = ""
@@ -912,15 +981,14 @@ local function createGUI()
 			TweenService:Create(btnStroke, TweenInfo.new(0.15), {Transparency = 0.5}):Play()
 		end)
 		btn.MouseButton1Click:Connect(function()
-			-- Fix: Use proper Vector2 tweening for UDim2
-			local originalSize = btn.Size
+			-- Fixed tween: scale down then back up using proper Vector2
 			local tweenIn = TweenService:Create(btn, TweenInfo.new(0.06, Enum.EasingStyle.Back), {
-				Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset, originalSize.Y.Scale, originalSize.Y.Offset - 4)
+				Size = UDim2.new(1, 0, 0, 40)
 			})
 			tweenIn:Play()
 			tweenIn.Completed:Connect(function()
 				local tweenOut = TweenService:Create(btn, TweenInfo.new(0.12, Enum.EasingStyle.Back), {
-					Size = originalSize
+					Size = origSize
 				})
 				tweenOut:Play()
 			end)
@@ -1055,6 +1123,23 @@ local function createGUI()
 	local card4 = addCard(pageHome, 8)
 	addButton(card4, "Join Discord", Color3.fromRGB(88, 101, 242), 1, function()
 		setclipboard("https://discord.gg/yourdiscordlink")
+		-- Show notification
+		local notification = Instance.new("TextLabel")
+		notification.Size = UDim2.new(0, 280, 0, 36)
+		notification.Position = UDim2.new(0.5, -140, 0.85, 0)
+		notification.BackgroundColor3 = Theme.Surface
+		notification.BackgroundTransparency = 0.2
+		notification.Text = "Link copied to clipboard!"
+		notification.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Medium)
+		notification.TextSize = 13
+		notification.TextColor3 = Theme.Text
+		notification.Parent = screenGui
+		Instance.new("UICorner", notification).CornerRadius = UDim.new(0, 8)
+		notification:TweenPosition(UDim2.new(0.5, -140, 0.85, -40), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.3, true)
+		task.wait(2)
+		notification:TweenPosition(UDim2.new(0.5, -140, 0.85, 0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.3, true)
+		task.wait(0.3)
+		notification:Destroy()
 	end)
 
 	addSpace(pageHome, 6, 9)
@@ -1152,23 +1237,13 @@ local function createGUI()
 		ConfigSideDash.SPEED = 600; ConfigSideDash.MAX_DASH = 0.3; ConfigSideDash.MOVE_SPEED = 100; ConfigSideDash.DISTANCE = 20.0; ConfigSideDash.REVERSE_DIR = false; ConfigSideDash.HOTKEY = "X"
 	end)
 
-	-- ========== PAGE: OTHER ==========
-	local pageOther = pages["Other"]
+	-- ========== PAGE: OTHER SCRIPTS ==========
+	local pageOtherScripts = pages["Other scripts"]
 
-	addSection(pageOther, "SCRIPTS", 1)
-	local scriptsCard = addCard(pageOther, 2)
+	addSection(pageOtherScripts, "SCRIPTS", 1)
+	local scriptsCard = addCard(pageOtherScripts, 2)
 
-	addToggle(scriptsCard, "Aimbot Script", "Auto-target nearest enemy", false, 1, function(state)
-		aimbotEnabled = state
-		if state and not aimbotLoaded then
-			aimbotLoaded = true
-			task.spawn(function()
-				loadstring(game:HttpGet("https://raw.githubusercontent.com/ttwizz/Open-Aimbot/master/source.lua", true))()
-			end)
-		end
-	end)
-
-	addToggle(scriptsCard, "Infinite Yield", "Admin commands script", false, 2, function(state)
+	addToggle(scriptsCard, "Infinite Yield", "Admin commands script", false, 1, function(state)
 		infiniteYieldEnabled = state
 		if state and not infiniteYieldLoaded then
 			infiniteYieldLoaded = true
@@ -1178,12 +1253,15 @@ local function createGUI()
 		end
 	end)
 
-	addSpace(pageOther, 6, 3)
-	addSection(pageOther, "COLORS", 4)
-	local colorCard = addCard(pageOther, 5)
-	addInfo(colorCard, "ESP Box Color", "Blue", Color3.fromRGB(60, 140, 255), 1)
-	addInfo(colorCard, "Name Color", "Yellow", Color3.fromRGB(255, 255, 0), 2)
-	addInfo(colorCard, "Chams Color", "Cyan", Color3.fromRGB(0, 200, 220), 3)
+	addToggle(scriptsCard, "Aimbot Script", "Auto-target nearest enemy", false, 2, function(state)
+		aimbotEnabled = state
+		if state and not aimbotLoaded then
+			aimbotLoaded = true
+			task.spawn(function()
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/ttwizz/Open-Aimbot/master/source.lua", true))()
+			end)
+		end
+	end)
 
 	-- ========== ENTRANCE ANIMATION ==========
 	mainWindow.Size = UDim2.new(0, 0, 0, 0)
@@ -1289,16 +1367,17 @@ local function showIntroDialog()
 	titleLbl.Size = UDim2.new(1, -40, 0, 32)
 	titleLbl.Position = UDim2.new(0, 20, 0, 145)
 	titleLbl.BackgroundTransparency = 1
-	titleLbl.Text = "BO MINH VI DAI"
+	titleLbl.Text = "Do you want become Yuji Modulo?"
 	titleLbl.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
-	titleLbl.TextSize = 26
+	titleLbl.TextSize = 20
 	titleLbl.TextColor3 = Theme.Text
+	titleLbl.TextWrapped = true
 	titleLbl.Parent = dialog
 
 	-- Subtitle
 	local subLbl = Instance.new("TextLabel")
 	subLbl.Size = UDim2.new(1, -40, 0, 24)
-	subLbl.Position = UDim2.new(0, 20, 0, 178)
+	subLbl.Position = UDim2.new(0, 20, 0, 185)
 	subLbl.BackgroundTransparency = 1
 	subLbl.Text = "Yuji Modulo & Side Dash System"
 	subLbl.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Medium)
@@ -1310,9 +1389,9 @@ local function showIntroDialog()
 	-- Version
 	local verLbl = Instance.new("TextLabel")
 	verLbl.Size = UDim2.new(1, -40, 0, 20)
-	verLbl.Position = UDim2.new(0, 20, 0, 202)
+	verLbl.Position = UDim2.new(0, 20, 0, 209)
 	verLbl.BackgroundTransparency = 1
-	verLbl.Text = "Version 1.0 | Jujutsu Shenanigans"
+	verLbl.Text = "Version 1.0 | by 7luvsz"
 	verLbl.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Medium)
 	verLbl.TextSize = 11
 	verLbl.TextTransparency = 0.5
@@ -1321,59 +1400,61 @@ local function showIntroDialog()
 
 	-- Button Container
 	local btnContainer = Instance.new("Frame")
-	btnContainer.Size = UDim2.new(1, -60, 0, 50)
-	btnContainer.Position = UDim2.new(0, 30, 1, -70)
+	btnContainer.Size = UDim2.new(1, -80, 0, 44)
+	btnContainer.Position = UDim2.new(0, 40, 1, -64)
 	btnContainer.BackgroundTransparency = 1
 	btnContainer.Parent = dialog
 
 	local btnLayout = Instance.new("UIListLayout", btnContainer)
 	btnLayout.FillDirection = Enum.FillDirection.Horizontal
-	btnLayout.Padding = UDim.new(0, 12)
+	btnLayout.Padding = UDim.new(0, 16)
 	btnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-	-- Launch Button
-	local launchBtn = Instance.new("TextButton")
-	launchBtn.Size = UDim2.new(0.6, -6, 1, 0)
-	launchBtn.BackgroundColor3 = Theme.Accent
-	launchBtn.BackgroundTransparency = 0.1
-	launchBtn.Text = "LAUNCH"
-	launchBtn.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
-	launchBtn.TextSize = 14
-	launchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	launchBtn.AutoButtonColor = false
-	launchBtn.Parent = btnContainer
-	Instance.new("UICorner", launchBtn).CornerRadius = UDim.new(0, 10)
+	-- YES Button
+	local yesBtn = Instance.new("TextButton")
+	yesBtn.Size = UDim2.new(0.6, -8, 1, 0)
+	yesBtn.BackgroundColor3 = Theme.Accent
+	yesBtn.BackgroundTransparency = 0.1
+	yesBtn.Text = "YES"
+	yesBtn.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
+	yesBtn.TextSize = 14
+	yesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	yesBtn.AutoButtonColor = false
+	yesBtn.Parent = btnContainer
+	Instance.new("UICorner", yesBtn).CornerRadius = UDim.new(0, 10)
 
-	local launchStroke = Instance.new("UIStroke", launchBtn)
-	launchStroke.Color = Theme.Accent
-	launchStroke.Thickness = 1.5
-	launchStroke.Transparency = 0.3
+	local yesStroke = Instance.new("UIStroke", yesBtn)
+	yesStroke.Color = Theme.Accent
+	yesStroke.Thickness = 1.5
+	yesStroke.Transparency = 0.3
 
-	-- Skip Button
-	local skipBtn = Instance.new("TextButton")
-	skipBtn.Size = UDim2.new(0.4, -6, 1, 0)
-	skipBtn.BackgroundColor3 = Theme.Surface
-	skipBtn.BackgroundTransparency = 0.3
-	skipBtn.Text = "SKIP"
-	skipBtn.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
-	skipBtn.TextSize = 14
-	skipBtn.TextColor3 = Theme.TextMuted
-	skipBtn.AutoButtonColor = false
-	skipBtn.Parent = btnContainer
-	Instance.new("UICorner", skipBtn).CornerRadius = UDim.new(0, 10)
+	-- NO Button
+	local noBtn = Instance.new("TextButton")
+	noBtn.Size = UDim2.new(0.4, -8, 1, 0)
+	noBtn.BackgroundColor3 = Theme.Surface
+	noBtn.BackgroundTransparency = 0.3
+	noBtn.Text = "NO"
+	noBtn.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
+	noBtn.TextSize = 14
+	noBtn.TextColor3 = Theme.TextMuted
+	noBtn.AutoButtonColor = false
+	noBtn.Parent = btnContainer
+	Instance.new("UICorner", noBtn).CornerRadius = UDim.new(0, 10)
 
 	-- Hover Effects
-	launchBtn.MouseEnter:Connect(function()
-		TweenService:Create(launchBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
+	yesBtn.MouseEnter:Connect(function()
+		TweenService:Create(yesBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
 	end)
-	launchBtn.MouseLeave:Connect(function()
-		TweenService:Create(launchBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.1}):Play()
+	yesBtn.MouseLeave:Connect(function()
+		TweenService:Create(yesBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.1}):Play()
 	end)
-	skipBtn.MouseEnter:Connect(function()
-		TweenService:Create(skipBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.1}):Play()
+	noBtn.MouseEnter:Connect(function()
+		TweenService:Create(noBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.1}):Play()
+		TweenService:Create(noBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.SurfaceHover}):Play()
 	end)
-	skipBtn.MouseLeave:Connect(function()
-		TweenService:Create(skipBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.3}):Play()
+	noBtn.MouseLeave:Connect(function()
+		TweenService:Create(noBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.3}):Play()
+		TweenService:Create(noBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Surface}):Play()
 	end)
 
 	-- Entrance Animation
@@ -1395,15 +1476,59 @@ local function showIntroDialog()
 		createGUI()
 	end
 
-	launchBtn.MouseButton1Click:Connect(function()
-		TweenService:Create(launchBtn, TweenInfo.new(0.06, Enum.EasingStyle.Back), {Size = UDim2.new(0.6, -6, 1.1, 0)}):Play()
+	yesBtn.MouseButton1Click:Connect(function()
+		godBFEnabled_VIP2 = true -- Enable Yuji Modulo
+		TweenService:Create(yesBtn, TweenInfo.new(0.06, Enum.EasingStyle.Back), {Size = UDim2.new(0.6, -8, 1.1, 0)}):Play()
 		task.wait(0.06)
-		TweenService:Create(launchBtn, TweenInfo.new(0.12, Enum.EasingStyle.Back), {Size = UDim2.new(0.6, -6, 1, 0)}):Play()
+		TweenService:Create(yesBtn, TweenInfo.new(0.12, Enum.EasingStyle.Back), {Size = UDim2.new(0.6, -8, 1, 0)}):Play()
 		closeAndOpen()
 	end)
 
-	skipBtn.MouseButton1Click:Connect(function()
-		closeAndOpen()
+	noBtn.MouseButton1Click:Connect(function()
+		TweenService:Create(noBtn, TweenInfo.new(0.06, Enum.EasingStyle.Back), {Size = UDim2.new(0.4, -8, 1.1, 0)}):Play()
+		task.wait(0.06)
+		TweenService:Create(noBtn, TweenInfo.new(0.12, Enum.EasingStyle.Back), {Size = UDim2.new(0.4, -8, 1, 0)}):Play()
+		task.wait(0.2)
+		-- Show "whyyyyy broooooo" message
+		screenGui:Destroy()
+		local msgGui = Instance.new("ScreenGui")
+		msgGui.Parent = player:WaitForChild("PlayerGui")
+		
+		local msgBg = Instance.new("Frame")
+		msgBg.Size = UDim2.new(1, 0, 1, 0)
+		msgBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		msgBg.BackgroundTransparency = 1
+		msgBg.Parent = msgGui
+		TweenService:Create(msgBg, TweenInfo.new(0.5), {BackgroundTransparency = 0.3}):Play()
+		
+		local msgLbl = Instance.new("TextLabel")
+		msgLbl.Size = UDim2.new(0.8, 0, 0.5, 0)
+		msgLbl.Position = UDim2.new(0.1, 0, 0.25, 0)
+		msgLbl.BackgroundTransparency = 1
+		msgLbl.Text = "whyyyyy broooooo"
+		msgLbl.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
+		msgLbl.TextSize = 48
+		msgLbl.TextColor3 = Theme.Danger
+		msgLbl.TextTransparency = 1
+		msgLbl.TextWrapped = true
+		msgLbl.Parent = msgBg
+		TweenService:Create(msgLbl, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
+		
+		-- Rainbow animation
+		task.spawn(function()
+			local t = 0
+			while msgGui.Parent do
+				t = t + 0.02
+				msgLbl.TextColor3 = Color3.fromHSV(t % 1, 0.8, 1)
+				task.wait(0.02)
+			end
+		end)
+		
+		task.wait(3)
+		TweenService:Create(msgLbl, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+		TweenService:Create(msgBg, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+		task.wait(0.5)
+		msgGui:Destroy()
 	end)
 end
 
