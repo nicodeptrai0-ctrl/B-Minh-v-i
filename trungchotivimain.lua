@@ -20,21 +20,21 @@ local orbiting = false
 -- ================== CONFIG ==================
 
 local ConfigVIP2 = {
-	SPEED = 800,
+	SPEED = 910,
 	MAX_DASH = 0.35,
-	MOVE_SPEED = 100,
+	MOVE_SPEED = 90,
 	BF_DELAY = 0.1,
 	BF_TOTAL_TIME = 0.59,
-	BF_HIT3_ANIM = 0.15,
+	BF_HIT3_ANIM = 0.1,
 	REVERSE_DIR = false,
 	HOTKEY = "C",
 }
 
 local ConfigSideDash = {
-	SPEED = 600,
-	MAX_DASH = 0.3,
+	SPEED = 700,
+	MAX_DASH = 0.5,
 	MOVE_SPEED = 100,
-	DISTANCE = 20.0,
+	DISTANCE = 15.0,
 	REVERSE_DIR = false,
 	HOTKEY = "X",
 }
@@ -333,29 +333,27 @@ end
 -- ================== THEME - PROFESSIONAL DARK ==================
 local Theme = {
 	-- Main colors
-	Accent = Color3.fromRGB(75, 120, 200),      -- Muted blue (not too bright)
-	AccentDark = Color3.fromRGB(55, 90, 160),   -- Darker accent
+	Accent = Color3.fromRGB(170, 45, 45),      -- Dark red (ngầu)
+	AccentDark = Color3.fromRGB(120, 30, 30), -- Darker accent
 	Background = Color3.fromRGB(12, 12, 14),   -- Very dark background
 	Surface = Color3.fromRGB(18, 18, 22),       -- Slightly lighter surface
 	SurfaceHover = Color3.fromRGB(25, 25, 30),  -- Hover state
 	SurfaceActive = Color3.fromRGB(32, 32, 38), -- Active state
-	
+
 	-- Text colors
 	Text = Color3.fromRGB(220, 220, 230),       -- Light gray text
 	TextMuted = Color3.fromRGB(140, 145, 160),  -- Muted text
 	TextDim = Color3.fromRGB(90, 95, 110),       -- Dim text
-	
+
 	-- Border
 	Border = Color3.fromRGB(40, 42, 50),        -- Subtle border
 	BorderLight = Color3.fromRGB(55, 58, 70),   -- Light border
-	
+
 	-- Status colors
 	Success = Color3.fromRGB(70, 160, 100),     -- Muted green
 	Warning = Color3.fromRGB(180, 140, 60),     -- Muted yellow
 	Danger = Color3.fromRGB(180, 70, 70),       -- Muted red
-	Purple = Color3.fromRGB(120, 100, 180),     -- Muted purple
-	Success = Color3.fromRGB(70, 150, 100),      -- Muted green
-	Warning = Color3.fromRGB(200, 180, 60),      -- Yellow
+	Purple = Color3.fromRGB(160, 40, 40),       -- Dark red purple
 }
 
 -- ================== GUI ==================
@@ -412,23 +410,14 @@ local function createGUI()
 	local logoContainer = Instance.new("Frame")
 	logoContainer.Size = UDim2.new(0, 40, 0, 40)
 	logoContainer.Position = UDim2.new(0, 14, 0.5, -20)
-	logoContainer.BackgroundColor3 = Theme.Accent
-	logoContainer.BackgroundTransparency = 0.2
+	logoContainer.BackgroundTransparency = 1
 	logoContainer.Parent = topbar
-	Instance.new("UICorner", logoContainer).CornerRadius = UDim.new(0, 8)
 
-	local logoStroke = Instance.new("UIStroke", logoContainer)
-	logoStroke.Color = Theme.Accent
-	logoStroke.Thickness = 1.5
-	logoStroke.Transparency = 0.4
-
-	local logoIcon = Instance.new("TextLabel")
+	local logoIcon = Instance.new("ImageLabel")
 	logoIcon.Size = UDim2.new(1, 0, 1, 0)
 	logoIcon.BackgroundTransparency = 1
-	logoIcon.Text = "BM"
-	logoIcon.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
-	logoIcon.TextSize = 14
-	logoIcon.TextColor3 = Theme.Text
+	logoIcon.Image = "rbxassetid://132541023644406"
+	logoIcon.ScaleType = Enum.ScaleType.Fit
 	logoIcon.Parent = logoContainer
 
 	-- Title and Author
@@ -441,7 +430,7 @@ local function createGUI()
 	local titleLbl = Instance.new("TextLabel")
 	titleLbl.Size = UDim2.new(1, 0, 0, 24)
 	titleLbl.BackgroundTransparency = 1
-	titleLbl.Text = "BO MINH VI DAI"
+	titleLbl.Text = "Bố Minh VĨ ĐẠI"
 	titleLbl.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
 	titleLbl.TextSize = 18
 	titleLbl.TextColor3 = Theme.Text
@@ -1218,8 +1207,8 @@ local function createGUI()
 	local yujiCard = addCard(pageConfig, 2)
 	addInput(yujiCard, "Speed", "SPEED", 1, ConfigVIP2)
 	addInput(yujiCard, "Max Dash", "MAX_DASH", 2, ConfigVIP2)
-	addInput(yujiCard, "Move Speed", "MOVE_SPEED", 3, ConfigVIP2)
-	addInput(yujiCard, "Hotkey", "HOTKEY", 4, ConfigVIP2)
+	addInput(yujiCard, "Black flash before dash", "BF_DELAY", 4, ConfigVIP2)
+	addInput(yujiCard, "Hotkey", "HOTKEY", 5, ConfigVIP2)
 
 	addSpace(pageConfig, 6, 3)
 	addSection(pageConfig, "SIDE DASH", 4)
@@ -1233,7 +1222,7 @@ local function createGUI()
 	addSection(pageConfig, "RESET", 7)
 	local resetCard = addCard(pageConfig, 8)
 	addButton(resetCard, "Reset All Settings", Theme.Danger, 1, function()
-		ConfigVIP2.SPEED = 800; ConfigVIP2.MAX_DASH = 0.35; ConfigVIP2.MOVE_SPEED = 100; ConfigVIP2.BF_DELAY = 0.1; ConfigVIP2.REVERSE_DIR = false; ConfigVIP2.HOTKEY = "C"
+		ConfigVIP2.SPEED = 800; ConfigVIP2.MAX_DASH = 0.35; ConfigVIP2.MOVE_SPEED = 100; ConfigVIP2.BF_DELAY = 0.1; ConfigVIP2.REVERSE_DIR = false; ConfigVIP2.HOTKEY = "C"; ConfigVIP2.BF_TOTAL_TIME = 0.59; ConfigVIP2.BF_HIT3_ANIM = 0.1
 		ConfigSideDash.SPEED = 600; ConfigSideDash.MAX_DASH = 0.3; ConfigSideDash.MOVE_SPEED = 100; ConfigSideDash.DISTANCE = 20.0; ConfigSideDash.REVERSE_DIR = false; ConfigSideDash.HOTKEY = "X"
 	end)
 
@@ -1253,7 +1242,7 @@ local function createGUI()
 		end
 	end)
 
-	addToggle(scriptsCard, "Aimbot Script", "Auto-target nearest enemy", false, 2, function(state)
+	addToggle(scriptsCard, "Aimbot Script (WORK ON PC)", "Auto-target nearest enemy", false, 2, function(state)
 		aimbotEnabled = state
 		if state and not aimbotLoaded then
 			aimbotLoaded = true
@@ -1341,26 +1330,17 @@ local function showIntroDialog()
 
 	-- Logo
 	local logoFrame = Instance.new("Frame")
-	logoFrame.Size = UDim2.new(0, 90, 0, 90)
-	logoFrame.Position = UDim2.new(0.5, -45, 0, 40)
-	logoFrame.BackgroundColor3 = Theme.Accent
-	logoFrame.BackgroundTransparency = 0.15
+	logoFrame.Size = UDim2.new(0, 110, 0, 110)
+	logoFrame.Position = UDim2.new(0.5, -55, 0, 30)
+	logoFrame.BackgroundTransparency = 1
 	logoFrame.Parent = dialog
-	Instance.new("UICorner", logoFrame).CornerRadius = UDim.new(0, 16)
 
-	local logoStroke = Instance.new("UIStroke", logoFrame)
-	logoStroke.Color = Theme.Accent
-	logoStroke.Thickness = 2
-	logoStroke.Transparency = 0.4
-
-	local logoLbl = Instance.new("TextLabel")
-	logoLbl.Size = UDim2.new(1, 0, 1, 0)
-	logoLbl.BackgroundTransparency = 1
-	logoLbl.Text = "BM"
-	logoLbl.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold)
-	logoLbl.TextSize = 32
-	logoLbl.TextColor3 = Theme.Text
-	logoLbl.Parent = logoFrame
+	local logoImg = Instance.new("ImageLabel")
+	logoImg.Size = UDim2.new(1, 0, 1, 0)
+	logoImg.BackgroundTransparency = 1
+	logoImg.Image = "rbxassetid://71490293048559"
+	logoImg.ScaleType = Enum.ScaleType.Fit
+	logoImg.Parent = logoFrame
 
 	-- Title
 	local titleLbl = Instance.new("TextLabel")
